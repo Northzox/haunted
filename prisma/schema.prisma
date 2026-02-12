@@ -1,0 +1,398 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(cuid())
+  username          String   @unique
+  email             String   @unique
+  password          String
+  avatar            String?
+  bio               String?
+  customStatus      String?
+  isAnonymous       Boolean  @default(false)
+  anonymousId       String?  @unique
+  isOnline          Boolean  @default(false)
+  lastSeen          DateTime @default(now())
+  emailVerified     Boolean  @default(false)
+  isAdmin           Boolean  @default(false)
+  isBanned          Boolean  @default(false)
+  banReason         String?
+  banExpires        DateTime?
+  mediaAutoDownload Boolean  @default(true)
+  messagePreview    Boolean  @default(true)
+  onlineVisibility  Boolean  @default(true)
+  compactMode       Boolean  @default(false)
+  fontSize          Int      @default(14)
+  messageSpacing    Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  sessions          Session[]
+  ownedServers      Server[]       @relation("ServerOwner")
+  serverMembers     ServerMember[]
+  messages          Message[]
+  attachments       Attachment[]
+  roles             Role[]
+  userBadges        UserBadge[]
+  sentReports       Report[]       @relation("ReportSender")
+  receivedReports   Report[]       @relation("ReportTarget")
+  auditLogs         AuditLog[]
+  invites           Invite[]
+  reactions         Reaction[]
+  messageReactions  MessageReaction[]
+  pinnedMessages    PinnedMessage[]
+  readReceipts      ReadReceipt[]
+  typingIndicators  TypingIndicator[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  lastUsed  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Server {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  icon        String?
+  ownerId     String
+  isPublic    Boolean  @default(false)
+  inviteCode  String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner     User            @relation("ServerOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members   ServerMember[]
+  channels  Channel[]
+  roles     Role[]
+  invites   Invite[]
+  reports   Report[]
+
+  @@map("servers")
+}
+
+model ServerMember {
+  id        String   @id @default(cuid())
+  userId    String
+  serverId  String
+  roleId    String?
+  joinedAt  DateTime @default(now())
+  nickname  String?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  role   Role?  @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, serverId])
+  @@map("server_members")
+}
+
+model Channel {
+  id          String      @id @default(cuid())
+  name        String
+  type        ChannelType @default(TEXT)
+  serverId    String
+  isPrivate   Boolean     @default(false)
+  slowmode    Int         @default(0) // seconds
+  position    Int         @default(0)
+  topic       String?
+  nsfw        Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  server      Server      @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  messages    Message[]
+  permissions ChannelPermission[]
+  invites     Invite[]
+  reports     Report[]
+
+  @@map("channels")
+}
+
+model Message {
+  id         String      @id @default(cuid())
+  content    String
+  userId     String
+  channelId  String
+  type       MessageType @default(TEXT)
+  editedAt   DateTime?
+  isPinned   Boolean     @default(false)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel    Channel            @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  attachments Attachment[]
+  reactions  Reaction[]
+  replies    Message[]          @relation("MessageReply")
+  replyTo    Message?           @relation("MessageReply", fields: [replyToId], references: [id])
+  replyToId  String?
+  readReceipts ReadReceipt[]
+  messageReactions MessageReaction[]
+  pinnedMessages PinnedMessage[]
+
+  @@map("messages")
+}
+
+model Attachment {
+  id         String           @id @default(cuid())
+  filename   String
+  originalName String
+  mimeType   String
+  size       Int
+  url        String
+  userId     String
+  messageId  String
+  type       AttachmentType   @default(FILE)
+  createdAt  DateTime         @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String
+  color       String?
+  permissions String[] // JSON array of permission strings
+  position    Int      @default(0)
+  isDefault   Boolean  @default(false)
+  isManaged   Boolean  @default(false)
+  serverId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  server      Server?         @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  members     ServerMember[]
+  userBadges  UserBadge[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@map("permissions")
+}
+
+model ChannelPermission {
+  id         String   @id @default(cuid())
+  channelId  String
+  roleId     String?
+  userId     String?
+  permissions String[] // JSON array of permission strings
+  createdAt  DateTime @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  role    Role?   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@map("channel_permissions")
+}
+
+model Badge {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  icon        String?
+  color       String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  userBadges UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model Invite {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  serverId  String?
+  channelId String?
+  createdBy String
+  maxUses   Int?
+  uses      Int       @default(0)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  server   Server?  @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  channel  Channel? @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  creator  User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@map("invites")
+}
+
+model Report {
+  id          String      @id @default(cuid())
+  type        ReportType
+  targetId    String
+  targetModel String      // "User", "Message", "Server", "Channel"
+  reason      String
+  description String?
+  reportedBy  String
+  status      ReportStatus @default(OPEN)
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  reporter User   @relation("ReportSender", fields: [reportedBy], references: [id], onDelete: Cascade)
+  target   User?  @relation("ReportTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  server   Server? @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  channel  Channel? @relation(fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  details   String?  // JSON string
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  userId    String
+  messageId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId, emoji])
+  @@map("reactions")
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  emoji     String
+  count     Int      @default(1)
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, emoji])
+  @@map("message_reactions")
+}
+
+model PinnedMessage {
+  id        String   @id @default(cuid())
+  messageId String
+  channelId String
+  pinnedBy  String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId])
+  @@map("pinned_messages")
+}
+
+model ReadReceipt {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@map("read_receipts")
+}
+
+model TypingIndicator {
+  id        String   @id @default(cuid())
+  userId    String
+  channelId String
+  startedAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@unique([userId, channelId])
+  @@map("typing_indicators")
+}
+
+// Enums
+enum ChannelType {
+  TEXT
+  MEDIA
+  FILE
+  VOICE
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  FILE
+  AUDIO
+  SYSTEM
+}
+
+enum AttachmentType {
+  IMAGE
+  VIDEO
+  AUDIO
+  FILE
+}
+
+enum ReportType {
+  USER
+  MESSAGE
+  SERVER
+  CHANNEL
+}
+
+enum ReportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}

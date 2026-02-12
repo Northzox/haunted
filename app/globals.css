@@ -1,0 +1,205 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 60%;
+  --muted: 0 0% 20%;
+  --muted-foreground: 0 0% 40%;
+  --border: 0 0% 10%;
+  --input: 0 0% 5%;
+  --ring: 0 0% 20%;
+  --accent: 0 0% 15%;
+  --destructive: 0 60% 50%;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: #000000;
+  color: #999999;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background: #000000;
+  color: #999999;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2a2a2a;
+}
+
+/* Selection */
+::selection {
+  background: #333333;
+  color: #cccccc;
+}
+
+/* Focus styles */
+*:focus {
+  outline: 2px solid #333333;
+  outline-offset: 2px;
+}
+
+/* Button styles */
+.btn {
+  @apply px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 border border-transparent;
+}
+
+.btn-primary {
+  @apply bg-black hover:bg-near-black text-text-primary border-border hover:border-gray;
+}
+
+.btn-secondary {
+  @apply bg-dark-gray hover:bg-medium-gray text-text-secondary border-border;
+}
+
+.btn-danger {
+  @apply bg-red-900 hover:bg-red-800 text-red-200 border-red-800;
+}
+
+/* Input styles */
+.input {
+  @apply w-full px-3 py-2 bg-black border border-border rounded-md text-text-primary placeholder-text-muted focus:outline-none focus:border-gray transition-colors duration-200;
+}
+
+/* Card styles */
+.card {
+  @apply bg-black border border-border rounded-lg p-4;
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to { 
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Loading spinner */
+.spinner {
+  border: 2px solid #1a1a1a;
+  border-top: 2px solid #333333;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Message styles */
+.message {
+  @apply p-3 rounded-lg mb-2 transition-all duration-200;
+}
+
+.message-own {
+  @apply bg-near-black border-l-4 border-gray;
+}
+
+.message-other {
+  @apply bg-dark-gray;
+}
+
+.message-system {
+  @apply bg-medium-gray text-center text-text-muted italic;
+}
+
+/* Channel styles */
+.channel {
+  @apply px-3 py-2 rounded-md hover:bg-near-black cursor-pointer transition-colors duration-200 flex items-center gap-2;
+}
+
+.channel-active {
+  @apply bg-near-black border-l-2 border-gray;
+}
+
+/* Server styles */
+.server {
+  @apply w-12 h-12 rounded-lg bg-dark-gray hover:bg-medium-gray flex items-center justify-center cursor-pointer transition-all duration-200;
+}
+
+.server-active {
+  @apply bg-gray border-2 border-gray;
+}
+
+/* User status */
+.status-online {
+  @apply w-2 h-2 bg-green-500 rounded-full;
+}
+
+.status-offline {
+  @apply w-2 h-2 bg-gray-500 rounded-full;
+}
+
+.status-away {
+  @apply w-2 h-2 bg-yellow-500 rounded-full;
+}
+
+/* Badge styles */
+.badge {
+  @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-dark-gray border border-border;
+}
+
+/* Typing indicator */
+.typing-indicator {
+  @apply flex items-center gap-1 text-text-muted text-sm;
+}
+
+.typing-dot {
+  @apply w-1 h-1 bg-text-muted rounded-full animate-pulse;
+}
+
+/* Reaction styles */
+.reaction {
+  @apply inline-flex items-center gap-1 px-2 py-1 rounded-md bg-near-black hover:bg-dark-gray cursor-pointer transition-colors duration-200 text-sm;
+}
+
+.reaction-active {
+  @apply bg-gray border border-gray;
+}
